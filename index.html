@@ -1,25 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script src="https://simplewebrtc.com/latest.js"></script>
+<script src="latest-v2.js"></script>
 </head>
 
 <body>
 
 <div id="localVideo" muted></div>
-<div id="remoteVideo"></div>
-
+<div id="remoteVideos"></div>
+<textarea id="chatText" cols="30" rows="10" disabled="true"></textarea>
+<button id="chatSend" disabled="true" onclick="sendMsg()">send</button>
+<div id="chatArea"></div>
 
 <script>
 var webrtc = new SimpleWebRTC({
-	localVideoEl: 'localVideo',
-	remoteVideosEl: 'remoteVideo',
-	autoRequestMedia: true
+  localVideoEl: 'localVideo',
+  remoteVideosEl: 'remoteVideos',
+  autoRequestMedia: true
 });
 
 webrtc.on('readyToCall', function () {
-	webrtc.joinRoom('My room name');
+  webrtc.joinRoom('hinex');
+  document.querySelector('#chatText').disabled = false;
+  document.querySelector('#chatSend').disabled = false;
 });
+
+var sendMsg = function() {
+  webrtc.sendDirectlyToAll('text chat', 'chat', document.querySelector('#chatText').value);
+};
+
+webrtc.on('channelMessage', function(peer, label, data) {
+  if (data.type === 'chat') {
+    console.debug('Received message: %s from %s', data.payload, peer.id);
+  }
+  var area = document.querySelector('#chatArea');
+  area.innerHTML = area.innerHTML + '<br/>' + data.payload;
+});
+
 </script>
 
 </body>
