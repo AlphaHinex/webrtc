@@ -11,7 +11,12 @@
 <textarea id="chatText" cols="30" rows="10" disabled="true"></textarea>
 <button id="chatSend" disabled="true" onclick="sendMsg()">send</button>
 <div id="chatArea"></div>
-<div id="remotes"></div>
+<div id="remotes">
+  <input id="fileinput" type="file" />
+  <ul id="filelist"></ul>
+  <div id="connstate"></div>
+  <ul id="receivedlist"></ul>
+</div>
 
 <script>
 var webrtc = new SimpleWebRTC({
@@ -38,49 +43,38 @@ webrtc.on('channelMessage', function(peer, label, data) {
   area.innerHTML = area.innerHTML + '<br/>' + data.payload;
 });
 
-webrtc.on('createdPeer', function(peer) {
-  console.debug('createdPeer', peer);
-  var remotes = document.getElementById('remotes');
-  if (!remotes) return;
-  var container = document.createElement('div');
-  container.id = 'container_' + webrtc.getDomId(peer);
+var fileinput = document.querySelector('#fileinput');
+fileinput.addEventListener('change', function() {
+  fileinput.disabled = true;
 
-  var peername = document.createElement('div');
-  peername.appendChild(document.createTextNode('Peer: ' + peer.id));
-  container.appendChild(peername);
+  var file = fileinput.files[0];
 
-  var filelist = document.createElement('ul');
-  container.appendChild(filelist);
+  var item = document.createElement('li');
 
-  var fileinput = document.createElement('input');
-  fileinput.type = 'file';
+  var span = document.createElement('span');
+  span.appendChild(document.createTextNode(file.name));
+  item.appendChild(span);
 
-  fileinput.addEventListener('change', function() {
-    fileinput.disabled = true;
+  span = document.createElement('span');
+  span.appendChild(document.createTextNode(file.size + 'bytes'));
+  item.appendChild(span);
 
-    var file = fileinput.files[0];
+  var peers = webrtc.getPeers();
+  for (var i = 0; i < peers.length; i++) {
+    var peer = peers[i];
     var sender = peer.sendFile(file);
-
-    var item = document.createElement('li');
-
-    var span = document.createElement('span');
-    span.appendChild(document.createTextNode(file.name));
-    item.appendChild(span);
-
-    span = document.createElement('span');
-    span.appendChild(document.createTextNode(file.size + 'bytes'));
-    item.appendChild(span);
 
     var sendProgress = document.createElement('progress');
     sendProgress.max = file.size;
+    item.appendChild(document.createTextNode('sent to ' + peer.id));
     item.appendChild(sendProgress);
+    item.appendChild(document.createElement('br'));
 
     sender.on('progress', function(bytesSent) {
       sendProgress.value = bytesSent;
     });
 
     sender.on('sentFile', function() {
-      item.appendChild(document.createTextNode('sent'));
       fileinput.removeAttribute('disabled');
     });
 
@@ -88,40 +82,42 @@ webrtc.on('createdPeer', function(peer) {
     sender.on('complete', function() {
       // safe to disconnect now
     });
-    filelist.appendChild(item);
-  }, false);
-  fileinput.disabled = 'disabled';
-  container.appendChild(fileinput);
 
-  if (peer && peer.pc) {
-    var connstate = document.createElement('div');
-    container.appendChild(connstate);
-    peer.pc.on('iceConnectionStateChange', function(event) {
-      var state = peer.pc.iceConnectionState;
-      console.debug('state', state);
-      switch (state) {
-        case 'checking':
-          connstate.innerText = 'Connection to peer ...';
-          break;
-        case 'connected':
-        case 'completed':
-          connstate.innerText = 'Connection established.';
-          fileinput.removeAttribute('disabled');
-          break;
-        case 'disconnected':
-          connstate.innerText = 'Disconnected.';
-          break;
-        case 'failed':
-          console.debug('failed!');
-          break;
-        case 'closed':
-          connstate.innerText = 'Connection closed.';
-          fileinput.disabled = 'disabled';
-          break;
-      }
-    });
+    if (peer && peer.pc) {
+      var connstate = document.querySelector('connstate');
+      peer.pc.on('iceConnectionStateChange', function(event) {
+        var state = peer.pc.iceConnectionState;
+        console.debug('state', state);
+        switch (state) {
+          case 'checking':
+            connstate.innerText = 'Connection to peer ...';
+            break;
+          case 'connected':
+          case 'completed':
+            connstate.innerText = 'Connection established.';
+            fileinput.removeAttribute('disabled');
+            break;
+          case 'disconnected':
+            connstate.innerText = 'Disconnected.';
+            break;
+          case 'failed':
+            console.debug('failed!');
+            break;
+          case 'closed':
+            connstate.innerText = 'Connection closed.';
+            fileinput.disabled = 'disabled';
+            break;
+        }
+      });
+    }
   }
-  remotes.appendChild(container);
+  
+  var filelist = document.querySelector('#filelist');
+  filelist.appendChild(item);
+}, false);
+
+webrtc.on('createdPeer', function(peer) {
+  console.debug('createdPeer', peer);
 
   peer.on('fileTransfer', function(metadata, receiver) {
     console.debug('incoming filetransfer', metadata);
@@ -152,7 +148,7 @@ webrtc.on('createdPeer', function(peer) {
 
       receiver.channel.close();
     });
-    filelist.appendChild(item);
+    document.querySelector('#receivedlist').appendChild(item);
   });
 });
 
