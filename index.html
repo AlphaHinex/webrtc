@@ -17,6 +17,9 @@
   <div id="connstate"></div>
   <ul id="receivedlist"></ul>
 </div>
+<div id="screens">
+  <button id="screenShareButton">share screen</button>
+</div>
 
 <script>
 var webrtc = new SimpleWebRTC({
@@ -171,6 +174,33 @@ webrtc.on('connectivityError', function (peer) {
   if (connstate) {
     connstate.innerText = 'Connection failed.';
     fileinput.disabled = 'disabled';
+  }
+});
+
+var button = document.getElementById('screenShareButton');
+var setButton = function(bool) {
+  button.innerText = bool ? 'share screen' : 'stop sharing';
+};
+if (!webrtc.capabilities.screenSharing) {
+  button.disabled = 'disabled';
+}
+webrtc.on('localScreenRemoved', function() {
+  setButton(true);
+});
+setButton(true);
+
+button.click(function() {
+  if (webrtc.getLocalScreen()) {
+    webrtc.stopScreenShare();
+    setButton(true);
+  } else {
+    webrtc.shareScreen(function(err) {
+      if (err) {
+        setButton(true);
+      } else {
+        setButton(false);
+      }
+    });
   }
 });
 </script>
