@@ -18,7 +18,7 @@
   <ul id="receivedlist"></ul>
 </div>
 <div id="screens">
-  <button id="screenShareButton">share screen</button>
+  <button id="screenShareButton" onclick="shareScreen()">share screen</button>
 </div>
 
 <script>
@@ -182,6 +182,7 @@ var setButton = function(bool) {
   button.innerText = bool ? 'share screen' : 'stop sharing';
 };
 if (!webrtc.capabilities.supportScreenSharing) {
+  console.debug('Your browser does not support screen sharing!');
   button.disabled = 'disabled';
 }
 webrtc.on('localScreenRemoved', function() {
@@ -189,20 +190,21 @@ webrtc.on('localScreenRemoved', function() {
 });
 setButton(true);
 
-button.click(function() {
+var shareScreen = function() {
   if (webrtc.getLocalScreen()) {
     webrtc.stopScreenShare();
     setButton(true);
   } else {
     webrtc.shareScreen(function(err) {
       if (err) {
+        console.debug(err);
         setButton(true);
       } else {
         setButton(false);
       }
     });
   }
-});
+};
 </script>
 
 </body>
