@@ -28,10 +28,9 @@ var webrtc = new SimpleWebRTC({
   autoRequestMedia: true
 });
 
-webrtc.on('readyToCall', function () {
-  webrtc.joinRoom('hinex');
+webrtc.joinRoom('hinex', function() {
   document.querySelector('#chatText').disabled = false;
-  document.querySelector('#chatSend').disabled = false;
+  document.querySelector('#chatSend').disabled = false;  
 });
 
 var sendMsg = function() {
