@@ -25,7 +25,8 @@
 var webrtc = new SimpleWebRTC({
   localVideoEl: 'localVideo',
   remoteVideosEl: 'remoteVideos',
-  autoRequestMedia: true
+  autoRequestMedia: true,
+  url: 'https://signalmaster.leanapp.cn'
 });
 
 webrtc.joinRoom('hinex', function() {
