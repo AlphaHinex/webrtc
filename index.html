@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<script src="latest-v2.js"></script>
 </head>
 
 <body>
@@ -21,190 +21,211 @@
   <button id="screenShareButton" onclick="shareScreen()">share screen</button>
 </div>
 
+<!-- <script src="https://simplewebrtc.com/latest-v2.js"></script> -->
+<script src="latest-v2-custom.js"></script>
+<script src="//cdn.bootcss.com/jquery/2.2.0/jquery.min.js"></script>
 <script>
-var webrtc = new SimpleWebRTC({
-  localVideoEl: 'localVideo',
-  remoteVideosEl: 'remoteVideos',
-  autoRequestMedia: true,
-  url: 'https://signalmaster.leanapp.cn'
-});
+$(document).ready(function() {
+  $.get("https://service.xirsys.com/ice",
+    {
+      ident: "hinex",
+      secret: "f8d75224-c629-11e5-9713-ea01ac9ec38d",
+      domain: "alphahinex.github.io",
+      application: "default",
+      room: "default",
+      secure: 1
+    },
+    function(data, status) {
+      var webrtc = new SimpleWebRTC({
+        // debug: true,
+        localVideoEl: 'localVideo',
+        remoteVideosEl: 'remoteVideos',
+        autoRequestMedia: true,
+        url: 'https://signalmaster.leanapp.cn',
+        peerConnectionConfig: data.d
+      });
 
-webrtc.joinRoom('hinex', function() {
-  document.querySelector('#chatText').disabled = false;
-  document.querySelector('#chatSend').disabled = false;  
-});
+      window.webrtc = webrtc;
 
-var sendMsg = function() {
-  webrtc.sendDirectlyToAll('text chat', 'chat', document.querySelector('#chatText').value);
-};
+      webrtc.joinRoom('hinex', function() {
+        document.querySelector('#chatText').disabled = false;
+        document.querySelector('#chatSend').disabled = false;  
+      });
 
-webrtc.on('channelMessage', function(peer, label, data) {
-  if (data.type === 'chat') {
-    console.debug('Received message: %s from %s', data.payload, peer.id);
-  }
-  var area = document.querySelector('#chatArea');
-  area.innerHTML = area.innerHTML + '<br/>' + data.payload;
-});
+      var sendMsg = function() {
+        webrtc.sendDirectlyToAll('text chat', 'chat', document.querySelector('#chatText').value);
+      };
 
-var fileinput = document.querySelector('#fileinput');
-fileinput.addEventListener('change', function() {
-  fileinput.disabled = true;
+      webrtc.on('channelMessage', function(peer, label, data) {
+        if (data.type === 'chat') {
+          console.debug('Received message: %s from %s', data.payload, peer.id);
+        }
+        var area = document.querySelector('#chatArea');
+        area.innerHTML = area.innerHTML + '<br/>' + data.payload;
+      });
 
-  var file = fileinput.files[0];
+      var fileinput = document.querySelector('#fileinput');
+      fileinput.addEventListener('change', function() {
+        fileinput.disabled = true;
 
-  var item = document.createElement('li');
+        var file = fileinput.files[0];
 
-  var span = document.createElement('span');
-  span.appendChild(document.createTextNode(file.name));
-  item.appendChild(span);
+        var item = document.createElement('li');
 
-  span = document.createElement('span');
-  span.appendChild(document.createTextNode(file.size + 'bytes'));
-  item.appendChild(span);
+        var span = document.createElement('span');
+        span.appendChild(document.createTextNode(file.name));
+        item.appendChild(span);
 
-  var peers = webrtc.getPeers();
-  for (var i = 0; i < peers.length; i++) {
-    var peer = peers[i];
-    var sender = peer.sendFile(file);
+        span = document.createElement('span');
+        span.appendChild(document.createTextNode(file.size + 'bytes'));
+        item.appendChild(span);
 
-    var sendProgress = document.createElement('progress');
-    sendProgress.max = file.size;
-    item.appendChild(document.createTextNode('sent to ' + peer.id));
-    item.appendChild(sendProgress);
-    item.appendChild(document.createElement('br'));
+        var peers = webrtc.getPeers();
+        for (var i = 0; i < peers.length; i++) {
+          var peer = peers[i];
+          var sender = peer.sendFile(file);
 
-    sender.on('progress', function(bytesSent) {
-      sendProgress.value = bytesSent;
-    });
+          var sendProgress = document.createElement('progress');
+          sendProgress.max = file.size;
+          item.appendChild(document.createTextNode('sent to ' + peer.id));
+          item.appendChild(sendProgress);
+          item.appendChild(document.createElement('br'));
 
-    sender.on('sentFile', function() {
-      fileinput.removeAttribute('disabled');
-    });
+          sender.on('progress', function(bytesSent) {
+            sendProgress.value = bytesSent;
+          });
 
-    // receiver has actually received the file
-    sender.on('complete', function() {
-      // safe to disconnect now
-    });
-
-    if (peer && peer.pc) {
-      var connstate = document.querySelector('connstate');
-      peer.pc.on('iceConnectionStateChange', function(event) {
-        var state = peer.pc.iceConnectionState;
-        console.debug('state', state);
-        switch (state) {
-          case 'checking':
-            connstate.innerText = 'Connection to peer ...';
-            break;
-          case 'connected':
-          case 'completed':
-            connstate.innerText = 'Connection established.';
+          sender.on('sentFile', function() {
             fileinput.removeAttribute('disabled');
-            break;
-          case 'disconnected':
-            connstate.innerText = 'Disconnected.';
-            break;
-          case 'failed':
-            console.debug('failed!');
-            break;
-          case 'closed':
-            connstate.innerText = 'Connection closed.';
-            fileinput.disabled = 'disabled';
-            break;
+          });
+
+          // receiver has actually received the file
+          sender.on('complete', function() {
+            // safe to disconnect now
+          });
+
+          if (peer && peer.pc) {
+            var connstate = document.querySelector('connstate');
+            peer.pc.on('iceConnectionStateChange', function(event) {
+              var state = peer.pc.iceConnectionState;
+              console.debug('state', state);
+              switch (state) {
+                case 'checking':
+                  connstate.innerText = 'Connection to peer ...';
+                  break;
+                case 'connected':
+                case 'completed':
+                  connstate.innerText = 'Connection established.';
+                  fileinput.removeAttribute('disabled');
+                  break;
+                case 'disconnected':
+                  connstate.innerText = 'Disconnected.';
+                  break;
+                case 'failed':
+                  console.debug('failed!');
+                  break;
+                case 'closed':
+                  connstate.innerText = 'Connection closed.';
+                  fileinput.disabled = 'disabled';
+                  break;
+              }
+            });
+          }
+        }
+        
+        var filelist = document.querySelector('#filelist');
+        filelist.appendChild(item);
+      }, false);
+
+      webrtc.on('createdPeer', function(peer) {
+        console.debug('createdPeer', peer);
+
+        peer.on('fileTransfer', function(metadata, receiver) {
+          console.debug('incoming filetransfer', metadata);
+          var item = document.createElement('li');
+          var span = document.createElement('span');
+          span.appendChild(document.createTextNode(metadata.name));
+          item.appendChild(span);
+
+          span = document.createElement('span');
+          span.appendChild(document.createTextNode(metadata.size + 'bytes'));
+          item.appendChild(span);
+
+          var receiveProgress = document.createElement('progress');
+          receiveProgress.max = metadata.size;
+          item.appendChild(receiveProgress);
+
+          receiver.on('progress', function (bytesReceived) {
+              receiveProgress.value = bytesReceived;
+          });
+
+          receiver.on('receivedFile', function(file, metadata) {
+            console.debug('received file', metadata.name, metadata.size);
+            var href = document.createElement('a');
+            href.href = URL.createObjectURL(file);
+            href.download = metadata.name;
+            href.appendChild(document.createTextNode('download'));
+            item.appendChild(href);
+
+            receiver.channel.close();
+          });
+          document.querySelector('#receivedlist').appendChild(item);
+        });
+      });
+
+      // local p2p/ice failure
+      webrtc.on('iceFailed', function (peer) {
+        var connstate = document.querySelector('#container_' + webrtc.getDomId(peer) + ' .connectionstate');
+        var fileinput = document.querySelector('#container_' + webrtc.getDomId(peer) + ' input');
+        console.debug('local fail', connstate);
+        if (connstate) {
+          connstate.innerText = 'Connection failed.';
+          fileinput.disabled = 'disabled';
         }
       });
-    }
-  }
-  
-  var filelist = document.querySelector('#filelist');
-  filelist.appendChild(item);
-}, false);
 
-webrtc.on('createdPeer', function(peer) {
-  console.debug('createdPeer', peer);
+      // remote p2p/ice failure
+      webrtc.on('connectivityError', function (peer) {
+        var connstate = document.querySelector('#container_' + webrtc.getDomId(peer) + ' .connectionstate');
+        var fileinput = document.querySelector('#container_' + webrtc.getDomId(peer) + ' input');
+        console.debug('remote fail', connstate);
+        if (connstate) {
+          connstate.innerText = 'Connection failed.';
+          fileinput.disabled = 'disabled';
+        }
+      });
 
-  peer.on('fileTransfer', function(metadata, receiver) {
-    console.debug('incoming filetransfer', metadata);
-    var item = document.createElement('li');
-    var span = document.createElement('span');
-    span.appendChild(document.createTextNode(metadata.name));
-    item.appendChild(span);
-
-    span = document.createElement('span');
-    span.appendChild(document.createTextNode(metadata.size + 'bytes'));
-    item.appendChild(span);
-
-    var receiveProgress = document.createElement('progress');
-    receiveProgress.max = metadata.size;
-    item.appendChild(receiveProgress);
-
-    receiver.on('progress', function (bytesReceived) {
-        receiveProgress.value = bytesReceived;
-    });
-
-    receiver.on('receivedFile', function(file, metadata) {
-      console.debug('received file', metadata.name, metadata.size);
-      var href = document.createElement('a');
-      href.href = URL.createObjectURL(file);
-      href.download = metadata.name;
-      href.appendChild(document.createTextNode('download'));
-      item.appendChild(href);
-
-      receiver.channel.close();
-    });
-    document.querySelector('#receivedlist').appendChild(item);
-  });
-});
-
-// local p2p/ice failure
-webrtc.on('iceFailed', function (peer) {
-  var connstate = document.querySelector('#container_' + webrtc.getDomId(peer) + ' .connectionstate');
-  var fileinput = document.querySelector('#container_' + webrtc.getDomId(peer) + ' input');
-  console.debug('local fail', connstate);
-  if (connstate) {
-    connstate.innerText = 'Connection failed.';
-    fileinput.disabled = 'disabled';
-  }
-});
-
-// remote p2p/ice failure
-webrtc.on('connectivityError', function (peer) {
-  var connstate = document.querySelector('#container_' + webrtc.getDomId(peer) + ' .connectionstate');
-  var fileinput = document.querySelector('#container_' + webrtc.getDomId(peer) + ' input');
-  console.debug('remote fail', connstate);
-  if (connstate) {
-    connstate.innerText = 'Connection failed.';
-    fileinput.disabled = 'disabled';
-  }
-});
-
-var button = document.getElementById('screenShareButton');
-var setButton = function(bool) {
-  button.innerText = bool ? 'share screen' : 'stop sharing';
-};
-if (!webrtc.capabilities.supportScreenSharing) {
-  console.debug('Your browser does not support screen sharing!');
-  button.disabled = 'disabled';
-}
-webrtc.on('localScreenRemoved', function() {
-  setButton(true);
-});
-setButton(true);
-
-var shareScreen = function() {
-  if (webrtc.getLocalScreen()) {
-    webrtc.stopScreenShare();
-    setButton(true);
-  } else {
-    webrtc.shareScreen(function(err) {
-      if (err) {
-        console.debug(err);
-        setButton(true);
-      } else {
-        setButton(false);
+      var button = document.getElementById('screenShareButton');
+      var setButton = function(bool) {
+        button.innerText = bool ? 'share screen' : 'stop sharing';
+      };
+      if (!webrtc.capabilities.supportScreenSharing) {
+        console.debug('Your browser does not support screen sharing!');
+        button.disabled = 'disabled';
       }
-    });
-  }
-};
+      webrtc.on('localScreenRemoved', function() {
+        setButton(true);
+      });
+      setButton(true);
+
+      var shareScreen = function() {
+        if (webrtc.getLocalScreen()) {
+          webrtc.stopScreenShare();
+          setButton(true);
+        } else {
+          webrtc.shareScreen(function(err) {
+            if (err) {
+              console.debug(err);
+              setButton(true);
+            } else {
+              setButton(false);
+            }
+          });
+        }
+      };
+    }
+  );
+});
 </script>
 
 </body>
