@@ -52,7 +52,7 @@ $(document).ready(function() {
         document.querySelector('#chatSend').disabled = false;  
       });
 
-      var sendMsg = function() {
+      window.sendMsg = function() {
         webrtc.sendDirectlyToAll('text chat', 'chat', document.querySelector('#chatText').value);
       };
 
@@ -208,7 +208,7 @@ $(document).ready(function() {
       });
       setButton(true);
 
-      var shareScreen = function() {
+      window.shareScreen = function() {
         if (webrtc.getLocalScreen()) {
           webrtc.stopScreenShare();
           setButton(true);
