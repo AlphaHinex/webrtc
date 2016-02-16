@@ -37,7 +37,7 @@ $(document).ready(function() {
     },
     function(data, status) {
       var webrtc = new SimpleWebRTC({
-        debug: true,
+        // debug: true,
         localVideoEl: 'localVideo',
         remoteVideosEl: 'remoteVideos',
         autoRequestMedia: true,
@@ -105,31 +105,7 @@ $(document).ready(function() {
           });
 
           if (peer && peer.pc) {
-            var connstate = document.querySelector('connstate');
-            peer.pc.on('iceConnectionStateChange', function(event) {
-              var state = peer.pc.iceConnectionState;
-              console.debug('state', state);
-              switch (state) {
-                case 'checking':
-                  connstate.innerText = 'Connection to peer ...';
-                  break;
-                case 'connected':
-                case 'completed':
-                  connstate.innerText = 'Connection established.';
-                  fileinput.removeAttribute('disabled');
-                  break;
-                case 'disconnected':
-                  connstate.innerText = 'Disconnected.';
-                  break;
-                case 'failed':
-                  console.debug('failed!');
-                  break;
-                case 'closed':
-                  connstate.innerText = 'Connection closed.';
-                  fileinput.disabled = 'disabled';
-                  break;
-              }
-            });
+            peer.pc.on('iceConnectionStateChange', onIceChangeState);
           }
         }
         
@@ -171,6 +147,8 @@ $(document).ready(function() {
           });
           document.querySelector('#receivedlist').appendChild(item);
         });
+
+        peer.pc.on('iceConnectionStateChange', onIceChangeState);
       });
 
       // local p2p/ice failure
@@ -226,6 +204,33 @@ $(document).ready(function() {
     }
   );
 });
+
+var onIceChangeState = function(event) {
+  var connstate = document.querySelector('#connstate');
+  var fileinput = document.querySelector('#fileinput');
+  var state = event.target.iceConnectionState;
+  console.debug('state', state);
+  switch (state) {
+    case 'checking':
+      connstate.innerText = 'Connection to peer ...';
+      break;
+    case 'connected':
+    case 'completed':
+      connstate.innerText = 'Connection established.';
+      fileinput.removeAttribute('disabled');
+      break;
+    case 'disconnected':
+      connstate.innerText = 'Disconnected.';
+      break;
+    case 'failed':
+      console.debug('failed!');
+      break;
+    case 'closed':
+      connstate.innerText = 'Connection closed.';
+      fileinput.disabled = 'disabled';
+      break;
+  }
+};
 </script>
 
 </body>
