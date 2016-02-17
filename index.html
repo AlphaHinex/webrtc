@@ -104,9 +104,10 @@ $(document).ready(function() {
             // safe to disconnect now
           });
 
-          if (peer && peer.pc) {
-            peer.pc.on('iceConnectionStateChange', onIceChangeState);
-          }
+          // codes below here is no need (maybe) after add listener when creating peer
+          // if (peer && peer.pc) {
+          //   peer.pc.on('iceConnectionStateChange', onIceChangeState);
+          // }
         }
         
         var filelist = document.querySelector('#filelist');
@@ -148,7 +149,15 @@ $(document).ready(function() {
           document.querySelector('#receivedlist').appendChild(item);
         });
 
-        peer.pc.on('iceConnectionStateChange', onIceChangeState);
+        if (peer.pc) {
+          peer.pc.on('iceConnectionStateChange', onIceChangeState);
+          peer.pc.on('offer', function(offer, err) {
+            console.debug('on pc offer: [err: %o], [offer: %o]', err, offer);
+          });
+          peer.pc.on('answer', function(answer, err) {
+            console.debug('on pc answer: [err: %o], [answer: %o]', err, answer);
+          });
+        }
       });
 
       // local p2p/ice failure
