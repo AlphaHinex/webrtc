@@ -153,9 +153,9 @@ $(document).ready(function() {
 
       // local p2p/ice failure
       webrtc.on('iceFailed', function (peer) {
-        var connstate = document.querySelector('#container_' + webrtc.getDomId(peer) + ' .connectionstate');
-        var fileinput = document.querySelector('#container_' + webrtc.getDomId(peer) + ' input');
-        console.debug('local fail', connstate);
+        var connstate = document.querySelector('#connstate');
+        var fileinput = document.querySelector('#fileinput');
+        console.debug('local %s fail', webrtc.getDomId(peer));
         if (connstate) {
           connstate.innerText = 'Connection failed.';
           fileinput.disabled = 'disabled';
@@ -164,9 +164,9 @@ $(document).ready(function() {
 
       // remote p2p/ice failure
       webrtc.on('connectivityError', function (peer) {
-        var connstate = document.querySelector('#container_' + webrtc.getDomId(peer) + ' .connectionstate');
-        var fileinput = document.querySelector('#container_' + webrtc.getDomId(peer) + ' input');
-        console.debug('remote fail', connstate);
+        var connstate = document.querySelector('#connstate');
+        var fileinput = document.querySelector('#fileinput');
+        console.debug('remote %s fail', webrtc.getDomId(peer));
         if (connstate) {
           connstate.innerText = 'Connection failed.';
           fileinput.disabled = 'disabled';
