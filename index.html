@@ -223,7 +223,7 @@ var onIceChangeState = function(event) {
       connstate.innerText = 'Disconnected.';
       break;
     case 'failed':
-      console.debug('failed!');
+      console.debug('failed! %o', event);
       break;
     case 'closed':
       connstate.innerText = 'Connection closed.';
